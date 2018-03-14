@@ -1,0 +1,67 @@
+FROM ubuntu:17.10
+MAINTAINER Infozdrav
+
+USER root
+RUN apt-get update && apt-get install -y \
+	apt-transport-https \
+	build-essential \
+	curl \
+	git \
+	iputils-ping \
+	# libffi-dev \
+	# libfreetype6-dev \
+	# libjpeg8-dev \
+	# liblcms2-dev \
+	libldap2-dev \
+	# libmysqlclient-dev \ 
+	# libsasl2-dev \
+	# libssl-dev \
+	# libtiff5-dev \ 
+	# libwebp-dev \
+	# libxext6 \
+	# libxrender1 \
+	mariadb-client \
+	mariadb-common \
+	nano \
+	python-dev \
+	python-pip \
+	python-setuptools \
+	# python-tk \
+	redis-tools \
+	# rlwrap \
+	software-properties-common \
+	tcl8.6-dev \
+	# tk8.6-dev \
+	wkhtmltopdf
+	# xfonts-75dpi \
+	# xfonts-base \
+	# zlib1g-dev
+
+RUN pip install --upgrade setuptools pip
+RUN useradd -ms /bin/bash frappe
+
+# Generate locale C.UTF-8 for mariadb and general locale data
+ENV LANG C.UTF-8
+
+#nodejs
+RUN curl -sL https://deb.nodesource.com/setup_9.x | bash
+RUN apt-get install -y nodejs
+RUN npm install -g yarn
+
+# Clean
+RUN apt-get clean -y && \
+    apt-get autoclean -y && \
+    apt-get autoremove -y
+
+USER frappe
+WORKDIR /home/frappe
+RUN git clone -b master https://github.com/frappe/bench.git bench-repo
+
+USER root
+RUN pip install -e bench-repo
+RUN mkdir frappe-bench
+RUN chown -R frappe:frappe /home/frappe/*
+
+USER frappe
+WORKDIR /home/frappe/frappe-bench
+

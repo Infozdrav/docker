@@ -1,0 +1,62 @@
+version: '3'
+
+services:
+  mariadb:
+    image: mariadb
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+    volumes:
+      - ./data/conf/mariadb-conf.d:/etc/mysql/conf.d
+      # - ./data/db:/var/lib/mysql
+    expose:
+      - 3306
+    # container_name: mariadb
+
+  redis-cache:
+    image: redis:alpine
+    # container_name: redis-cache
+    command: ["redis-server","/etc/conf.d/redis.conf"]
+    volumes:
+      - ./data/conf/redis/redis_cache.conf:/etc/conf.d/redis.conf
+    expose:
+      - 110000
+
+  redis-queue:
+    image: redis:alpine
+    # container_name: redis-queue
+    command: ["redis-server", "/etc/conf.d/redis.conf"]
+    volumes:
+      - ./data/conf/redis/redis_queue.conf:/etc/conf.d/redis.conf
+    expose:
+      - 10000
+
+  redis-socketio:
+    image: redis:alpine
+    # container_name: redis-socketio
+    command: ["redis-server","/etc/conf.d/redis.conf"]
+    volumes:
+      - ./data/conf/redis/redis_socketio.conf:/etc/conf.d/redis.conf
+    expose:
+      - 12000
+      
+  frappe:
+    # container_name: frappe
+    build:
+      context: .
+      dockerfile: ./Dockerfile.frappe
+    volumes:
+       - ./frappe-bench/apps:/home/frappe/frappe-bench/apps
+       - ./frappe-bench/sites:/home/frappe/frappe-bench/sites
+    ports:
+      - "8000:8000" #webserver_port
+      - "9000:9000" #socketio_port
+      - "6787:6787" #file_watcher_port
+    depends_on:
+      - mariadb
+      - redis-cache
+      - redis-queue
+      - redis-socketio
+    stdin_open: true
+    tty: true
+        
